@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cifrado César & Atbash</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Courier New', monospace; background: #0f172a; color: #e2e8f0; min-height: 100vh; padding: 2rem 1rem; }
+    .container { max-width: 720px; margin: 0 auto; }
+    header { text-align: center; margin-bottom: 2rem; }
+    header h1 { font-size: 2rem; color: #60a5fa; letter-spacing: 0.08em; }
+    header p { font-size: 0.85rem; color: #94a3b8; margin-top: 6px; }
+    .card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; }
+    label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: #94a3b8; display: block; margin-bottom: 6px; }
+    input[type=text], textarea {
+      width: 100%; background: #0f172a; border: 1px solid #334155; border-radius: 8px;
+      color: #e2e8f0; font-family: 'Courier New', monospace; font-size: 0.9rem;
+      padding: 10px 12px; outline: none; transition: border-color 0.2s;
+    }
+    input[type=text]:focus, textarea:focus { border-color: #60a5fa; }
+    textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
+    .tabs { display: flex; gap: 6px; margin-bottom: 1rem; }
+    .tab { flex: 1; padding: 9px; border: 1px solid #334155; border-radius: 8px; background: #0f172a;
+      color: #94a3b8; font-size: 0.85rem; cursor: pointer; text-align: center; transition: all 0.2s; font-family: 'Courier New', monospace; }
+    .tab.active { background: #1d4ed8; border-color: #3b82f6; color: #fff; font-weight: bold; }
+    .cipher-opts { display: flex; gap: 6px; margin-bottom: 1rem; }
+    .cipher-btn { flex: 1; padding: 8px; border: 1px solid #334155; border-radius: 8px; background: #0f172a;
+      color: #94a3b8; font-size: 0.85rem; cursor: pointer; text-align: center; transition: all 0.2s; font-family: 'Courier New', monospace; }
+    .cipher-btn.active { border-color: #60a5fa; color: #60a5fa; background: #172554; font-weight: bold; }
+    .module-row { display: flex; align-items: center; gap: 12px; padding: 10px 12px;
+      background: #0f172a; border-radius: 8px; border: 1px solid #334155; margin-bottom: 1rem; }
+    .module-row label { margin: 0; flex: 1; font-size: 0.75rem; }
+    input[type=range] { flex: 2; accent-color: #60a5fa; }
+    .module-val { font-size: 1rem; font-weight: bold; color: #60a5fa; min-width: 28px; text-align: right; }
+    .btn-run { width: 100%; padding: 11px; background: #1d4ed8; border: none; border-radius: 8px;
+      color: #fff; font-size: 0.95rem; cursor: pointer; font-family: 'Courier New', monospace;
+      font-weight: bold; margin: 0.75rem 0; transition: background 0.2s; letter-spacing: 0.04em; }
+    .btn-run:hover { background: #2563eb; }
+    .output-box { background: #0f172a; border: 1px solid #334155; border-radius: 8px;
+      padding: 12px; min-height: 60px; font-size: 0.9rem; line-height: 1.6; word-break: break-all; color: #a5f3fc; }
+    .section-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: #94a3b8; margin-bottom: 6px; }
+    .badge { display: inline-block; font-size: 0.75rem; padding: 4px 12px; border-radius: 99px;
+      margin-bottom: 10px; font-family: 'Courier New', monospace; }
+    .badge-cesar { background: #172554; color: #60a5fa; border: 1px solid #1e40af; }
+    .badge-atbash { background: #14532d; color: #4ade80; border: 1px solid #166534; }
+    .info-chips { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+    .chip { font-size: 0.7rem; padding: 3px 10px; border-radius: 99px; background: #0f172a; color: #94a3b8; border: 1px solid #334155; }
+    .auto-notice { font-size: 0.78rem; color: #94a3b8; padding: 8px 12px; background: #0f172a;
+      border-radius: 8px; border-left: 3px solid #334155; margin-bottom: 1rem; }
+    .copy-btn { font-size: 0.7rem; color: #94a3b8; background: none; border: none; cursor: pointer;
+      float: right; font-family: 'Courier New', monospace; padding: 0; }
+    .copy-btn:hover { color: #60a5fa; }
+    .charset-row { display: flex; gap: 8px; align-items: center; }
+    .reset-btn { background: none; border: 1px solid #334155; border-radius: 6px; color: #94a3b8;
+      cursor: pointer; padding: 6px 10px; font-size: 0.8rem; white-space: nowrap; }
+    .reset-btn:hover { color: #e2e8f0; border-color: #475569; }
+    .charset-hint { font-size: 0.7rem; color: #64748b; margin-top: 5px; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>⚿ Cifrado César &amp; Atbash</h1>
+    <p>Herramienta de cifrado y descifrado clásico · Análisis de frecuencia automático</p>
+  </header>
+
+  <!-- Conjunto de caracteres -->
+  <div class="card">
+    <label>Conjunto de caracteres (configurable por el docente)</label>
+    <div class="charset-row">
+      <input type="text" id="charset" value="ABCDEFGHIJKLMNOPQRSTUVWXYZ" spellcheck="false" />
+      <button class="reset-btn" onclick="resetCharset()">↺ Restaurar</button>
+    </div>
+    <div class="charset-hint" id="charset-hint">26 caracteres · Modifica este campo con el conjunto que indique el docente</div>
+  </div>
+
+  <!-- Tabs modo -->
+  <div class="tabs">
+    <div class="tab active" id="tab-enc" onclick="setMode('enc')">🔒 Cifrar</div>
+    <div class="tab" id="tab-dec" onclick="setMode('dec')">🔓 Descifrar</div>
+  </div>
+
+  <!-- Panel Cifrar -->
+  <div class="card" id="enc-panel">
+    <div class="section-label">Tipo de cifrado</div>
+    <div class="cipher-opts">
+      <div class="cipher-btn active" id="btn-cesar" onclick="setCipher('cesar')">César</div>
+      <div class="cipher-btn" id="btn-atbash" onclick="setCipher('atbash')">Atbash</div>
+    </div>
+    <div class="module-row" id="module-row">
+      <label>Módulo (desplazamiento)</label>
+      <input type="range" min="1" max="25" value="3" id="shift-range" oninput="updateShift()" />
+      <span class="module-val" id="shift-val">3</span>
+    </div>
+    <div class="section-label">Texto original</div>
+    <textarea id="enc-input" placeholder="Escribe la oración a cifrar..." oninput="processEnc()"></textarea>
+    <button class="btn-run" onclick="processEnc()">Cifrar →</button>
+    <div class="section-label">Resultado cifrado <button class="copy-btn" onclick="copyText('enc-output')">📋 copiar</button></div>
+    <div class="output-box" id="enc-output">—</div>
+    <div class="info-chips" id="enc-chips" style="display:none">
+      <span class="chip" id="enc-m1"></span>
+      <span class="chip" id="enc-m2"></span>
+      <span class="chip" id="enc-m3"></span>
+    </div>
+  </div>
+
+  <!-- Panel Descifrar -->
+  <div class="card" id="dec-panel" style="display:none">
+    <div class="auto-notice">
+      <strong>Modo automático:</strong> el sistema detectará el tipo de cifrado y el módulo utilizando análisis de frecuencia (método de Al-Kindi).
+    </div>
+    <div class="section-label">Texto cifrado</div>
+    <textarea id="dec-input" placeholder="Pega aquí el texto cifrado..." oninput="processDec()"></textarea>
+    <button class="btn-run" onclick="processDec()">Descifrar →</button>
+    <div id="detection-area" style="display:none; margin-top:0.75rem">
+      <div class="section-label">Detección automática</div>
+      <div id="det-badge"></div>
+    </div>
+    <div class="section-label">Resultado descifrado <button class="copy-btn" onclick="copyText('dec-output')">📋 copiar</button></div>
+    <div class="output-box" id="dec-output">—</div>
+    <div class="info-chips" id="dec-chips" style="display:none">
+      <span class="chip" id="dec-m1"></span>
+      <span class="chip" id="dec-m2"></span>
+      <span class="chip" id="dec-m3"></span>
+    </div>
+  </div>
+</div>
+
+<script>
+let mode = 'enc', cipher = 'cesar', shift = 3;
+
+// Frecuencias del español para análisis de Al-Kindi
+const FREQ = {A:12.53,E:13.68,O:8.68,S:7.98,R:6.87,N:6.71,I:6.25,D:5.86,L:4.97,C:4.68,T:4.63,U:3.93,M:3.15,P:2.51,B:1.42,G:1.01,V:0.90,Y:0.90,F:0.69,H:0.70,Q:0.88,J:0.44,Z:0.52,X:0.22,K:0.01,W:0.01};
+
+function getCS() { return document.getElementById('charset').value.toUpperCase().replace(/\s/g,''); }
+
+document.getElementById('charset').addEventListener('input', function() {
+  const cs = getCS();
+  const max = Math.max(cs.length - 1, 1);
+  const r = document.getElementById('shift-range');
+  r.max = max;
+  if (parseInt(r.value) > max) { r.value = 1; shift = 1; document.getElementById('shift-val').textContent = 1; }
+  document.getElementById('charset-hint').textContent = cs.length + ' caracteres configurados';
+  mode === 'enc' ? processEnc() : processDec();
+});
+
+function resetCharset() {
+  document.getElementById('charset').value = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  document.getElementById('charset-hint').textContent = '26 caracteres · Modifica este campo con el conjunto que indique el docente';
+  document.getElementById('shift-range').max = 25;
+  document.getElementById('shift-range').value = 3;
+  shift = 3;
+  document.getElementById('shift-val').textContent = 3;
+  mode === 'enc' ? processEnc() : processDec();
+}
+
+function setMode(m) {
+  mode = m;
+  document.getElementById('tab-enc').classList.toggle('active', m === 'enc');
+  document.getElementById('tab-dec').classList.toggle('active', m === 'dec');
+  document.getElementById('enc-panel').style.display = m === 'enc' ? '' : 'none';
+  document.getElementById('dec-panel').style.display = m === 'dec' ? '' : 'none';
+}
+
+function setCipher(c) {
+  cipher = c;
+  document.getElementById('btn-cesar').classList.toggle('active', c === 'cesar');
+  document.getElementById('btn-atbash').classList.toggle('active', c === 'atbash');
+  document.getElementById('module-row').style.display = c === 'cesar' ? '' : 'none';
+  processEnc();
+}
+
+function updateShift() {
+  shift = parseInt(document.getElementById('shift-range').value);
+  document.getElementById('shift-val').textContent = shift;
+  processEnc();
+}
+
+function cesarEnc(text, s, cs) {
+  const n = cs.length;
+  return text.toUpperCase().split('').map(ch => {
+    const i = cs.indexOf(ch);
+    return i === -1 ? ch : cs[(i + s) % n];
+  }).join('');
+}
+
+function cesarDec(text, s, cs) {
+  const n = cs.length;
+  return text.toUpperCase().split('').map(ch => {
+    const i = cs.indexOf(ch);
+    return i === -1 ? ch : cs[((i - s) % n + n) % n];
+  }).join('');
+}
+
+function atbash(text, cs) {
+  return text.toUpperCase().split('').map(ch => {
+    const i = cs.indexOf(ch);
+    return i === -1 ? ch : cs[cs.length - 1 - i];
+  }).join('');
+}
+
+function scoreFreq(text, cs) {
+  const freq = {}, up = text.toUpperCase();
+  let total = 0;
+  up.split('').forEach(c => { if (cs.includes(c)) { freq[c] = (freq[c]||0)+1; total++; } });
+  if (!total) return -Infinity;
+  let score = 0;
+  for (const c in freq) {
+    const exp = (FREQ[c] || 0.5) / 100;
+    const act = freq[c] / total;
+    score -= Math.pow(act - exp, 2);
+  }
+  return score;
+}
+
+function processEnc() {
+  const text = document.getElementById('enc-input').value;
+  const cs = getCS();
+  if (!text.trim()) { document.getElementById('enc-output').textContent = '—'; document.getElementById('enc-chips').style.display='none'; return; }
+  const result = cipher === 'cesar' ? cesarEnc(text, shift, cs) : atbash(text, cs);
+  document.getElementById('enc-output').textContent = result;
+  const inCount = text.toUpperCase().split('').filter(c => cs.includes(c)).length;
+  document.getElementById('enc-chips').style.display = 'flex';
+  document.getElementById('enc-m1').textContent = 'Método: ' + (cipher === 'cesar' ? 'César' : 'Atbash');
+  document.getElementById('enc-m2').textContent = cipher === 'cesar' ? 'Módulo: ' + shift : 'Módulo: N/A';
+  document.getElementById('enc-m3').textContent = inCount + ' caracteres cifrados';
+}
+
+function processDec() {
+  const text = document.getElementById('dec-input').value;
+  const cs = getCS();
+  const n = cs.length;
+  if (!text.trim()) {
+    document.getElementById('dec-output').textContent = '—';
+    document.getElementById('detection-area').style.display = 'none';
+    document.getElementById('dec-chips').style.display = 'none';
+    return;
+  }
+  let best = -Infinity, bestResult = '', bestMethod = '', bestModule = 0;
+  for (let s = 1; s < n; s++) {
+    const dec = cesarDec(text, s, cs);
+    const sc = scoreFreq(dec, cs);
+    if (sc > best) { best = sc; bestResult = dec; bestMethod = 'cesar'; bestModule = s; }
+  }
+  const atDec = atbash(text, cs);
+  const atSc = scoreFreq(atDec, cs);
+  if (atSc > best) { best = atSc; bestResult = atDec; bestMethod = 'atbash'; bestModule = 0; }
+
+  document.getElementById('dec-output').textContent = bestResult || '—';
+  document.getElementById('detection-area').style.display = '';
+
+  const badge = document.getElementById('det-badge');
+  if (bestMethod === 'cesar') {
+    badge.innerHTML = '<span class="badge badge-cesar">✓ Detectado: Cifrado César · Módulo ' + bestModule + '</span>';
+  } else {
+    badge.innerHTML = '<span class="badge badge-atbash">✓ Detectado: Cifrado Atbash</span>';
+  }
+  document.getElementById('dec-chips').style.display = 'flex';
+  document.getElementById('dec-m1').textContent = 'Método: ' + (bestMethod === 'cesar' ? 'César' : 'Atbash');
+  document.getElementById('dec-m2').textContent = bestMethod === 'cesar' ? 'Módulo: ' + bestModule : 'Módulo: N/A';
+  document.getElementById('dec-m3').textContent = 'Puntuación freq.: ' + best.toFixed(4);
+}
+
+function copyText(id) {
+  const t = document.getElementById(id).textContent;
+  if (t && t !== '—') navigator.clipboard.writeText(t).catch(()=>{});
+}
+</script>
+</body>
+</html>
